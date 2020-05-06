@@ -1,0 +1,171 @@
+---
+title: "Student Performance"
+author: "Roksana Synowiec"
+date: "21 stycznia 2020"
+output: html_document
+---
+
+![](C:/Users/roksi/Downloads/zdjecie1.jpg)
+
+***
+<span style="font-size: xx-large"><p style="text-align: center">**Przedstawienie danych**</p></span>
+
+
+```{r eval=TRUE, echo=FALSE, fig.height=4, fig.width=4}
+dane = read.csv2("C:/Users/roksi/Downloads/StudentsPerformance.csv", header = TRUE, sep = "," )
+```
+```{r}
+summary(dane)
+```
+
+***
+
+<span style="font-size: xx-large"><p style="text-align: center">**Wizualizacja**</p></span>
+
+
+
+####**Nieco przejrzyściej wyniki wyglądają na wykresie**
+####Zobaczmy, jak rozkładają się wyniki na histogramie
+
+```{r eval=TRUE, echo=FALSE, fig.height = 3, fig.width = 2.7, fig.pos="c" }
+hist(dane$math.score, col="palegreen3", main = "math", xlab = "score", breaks = 20)
+hist(dane$reading.score, col="sienna1", main = "reading", xlab = "score", breaks = 20)
+hist(dane$writing.score, col="slateblue3", main = "writing", xlab = "score", breaks = 20)
+```
+
+
+####**Wykres gęstości**
+
+```{r message=FALSE, warning=FALSE, fig.align='center'}
+library(ggplot2)
+ggplot(data=dane) +geom_density(aes(x=dane$math.score),alpha=0.6,adjust=1.5,fill='green')+geom_density(aes(x=dane$reading.score),alpha=0.6,fill='orange')+geom_density(aes(x=dane$writing.score), alpha=0.6, fill="blue")+labs(x="score")+theme_minimal()+annotate(geom="text", x=95, y=0.02, label="Math",
+color="green", size=5)+annotate(geom="text", x=95, y=0.018, label="Reading",
+color="orange", size=5)+annotate(geom="text", x=95, y=0.016, label="Writing",
+color="blue", size=5)
+
+```
+
+####Na podstawie wykresu można wnioskować, że rozkład wyników z matematyki układa się podobnie do rozkładu gęstości rozkładu normalnego. W celu potwierdzenia hipoteza został wykonany test Shapiro-Wilka.
+
+```{r }
+shapiro.test(dane$math.score)
+```
+
+####Wartość p-value świadczy o tym, że rozkład wyników z matematyki jest jednak oddalony od krzywej Gaussa. 
+***
+
+###**Załóżmy, że 40 pkt zalicza egzamin, wówczas wyniki przedstawiały by się następująco:**
+
+```{r eval=TRUE, echo=FALSE, fig.pos='h', fig.height=4.1, fig.width=4.1,message=FALSE, warning=FALSE, fig.align='center'}
+zal_math <- length(which(dane$math.score > 40) ==TRUE)
+nzal_math = 1000 - zal_math
+zal_reading <-length(which(dane$reading.score >40)==TRUE)
+nzal_reading = 1000 - zal_reading
+zal_writing <-  length(which(dane$writing.score >40)==TRUE)
+nzal_writing = 1000 - zal_writing
+
+
+```
+```{r warning=FALSE}
+library(plotrix)
+math<-c(zal_math,nzal_math)
+pie3D(math, labels=c("pass 95%","fail 5%"), main="math score", col=c("darkcyan","orange"), explode=0.4, shade = 0.8, start = 2, theta=pi/5)
+```
+
+```{r eval=TRUE, echo=FALSE, fig.height = 4.1, fig.width =4.1}
+reading<-c(zal_reading, nzal_reading)
+pie3D(reading, labels=c("pass 97,3%","fail 2,7%"), main="reading score", col=c("darkcyan","orange"), explode=0.4, shade = 0.8, start = 2, theta=pi/5)
+
+writing<-c(zal_writing, nzal_writing)
+pie3D(writing, labels=c("pass 99%","fail 1%"), main="writing score", col=c("darkcyan","orange"), explode=0.4, shade = 0.8, start = 2, theta=pi/5)
+
+
+
+```
+
+#### Jak widać, uczniowie najlepiej radzą sobie z testem z pisania, nieco gorzej z matematyki, aczkolwiek ostatecznie wyniki mimo to są zadowalające
+```{r eval=TRUE, echo=FALSE}
+maleM<-c(dane$math.score[dane$gender=="male"])
+femaleM <- c(dane$math.score[dane$gender=="female"])
+maleR<-c(dane$reading.score[dane$gender=="male"])
+femaleR <- c(dane$reading.score[dane$gender=="female"])
+maleW<-c(dane$writing.score[dane$gender=="male"])
+femaleW <- c(dane$writing.score[dane$gender=="female"])
+library(ggplot2)
+```
+
+***
+
+##**Podzielmy teraz wyniki z egzaminów na płci**
+
+```{r, fig.height=4, fig.align="center"}
+gender<-c(rep("female",3),rep("male",3))
+test<-(c("math","reading","writing","math","reading","writing"))
+results<-c(mean(femaleM),mean(femaleR),mean(femaleW), mean(maleM), mean(maleR),mean(maleW))
+table<-data.frame(gender,test,results)
+
+
+ggplot(table)+geom_bar(aes(x=table$gender, y=table$results, fill = table$test), colour="black",stat="identity", position=position_dodge())+labs(x="gender" , y="results", fill="exams")+scale_fill_brewer(palette="Dark2")+theme_minimal()
+
+```
+
+####Można wnioskować, że dziewczyny lepiej radzą sobie z czytaniem i pisaniem, jednak polegają na matematyce. Odwrotny skutek możemy zauważyć u chłopaków.
+
+***
+
+##**Sprawdzimy teraz, jaki wpływ na wyniki z matematyki ma wykształcenie rodziców**
+
+```{r, fig.align="center"}
+ggplot(dane, aes(x=dane$parental.level.of.education, y=dane$math.score, fill=dane$math.score) )+geom_violin(trim=TRUE, fill="lightslateblue", colour = "red")+labs(x="Parental level of education", y="Results")+theme_minimal()
+```
+
+####Najgorzej z egzaminami radzą sobie dzieci, który rodzice zakończyli edukacje na poziomie szkoły średniej.
+####Ponadto można zaobserwować ciekawą zależność, że dzieci, których rodzice ukończyli studia z tytułem magistra nie osiągają wyników lepszych niż ok. 90 punktów i nie gorsze niż ok. 40 pkt.
+***
+
+##**Przekonajmy się teraz, jak wyglądają wyniki z podziałem na rodziny zamożne i mniej zamożne**
+
+####**Standard**-rodzina zamożna
+####**Free/reduced**-rodzina mniej zamożna
+```{r, fig.align="center"}
+ggplot(dane )+geom_boxplot(aes(x=dane$lunch, y=dane$math.score, fill=dane$lunch), fill=c("lightblue","orange"))+theme(legend.position="none")+labs(x="Lunch", y="Math score")
+```
+
+####Tutaj również można zaobserwować pewną tendencję. Uczniowie pochodzący z rodzin zamożniejszych mają srednio o 20% lepsze wyniki.
+***
+
+##**Rozkład wyników ze względu na zaliczenie testu wstępnego**
+
+```{r eval=TRUE, echo=FALSE, fig.align="center"}
+
+test<-c(rep("completed",3),rep("none",3))
+exams<-c("math","writing","reading","math","writing","reading")
+score<-c(mean(dane$math.score[dane$test.preparation.course=="completed"]),mean(dane$reading.score[dane$test.preparation.course=="completed"]),mean(dane$writing.score[dane$test.preparation.course=="completed"]),mean(dane$math.score[dane$test.preparation.course=="none"]),mean(dane$reading.score[dane$test.preparation.course=="none"]),mean(dane$writing.score[dane$test.preparation.course=="none"]))
+sd<-c(sd(dane$math.score[dane$test.preparation.course=="completed"]),sd(dane$reading.score[dane$test.preparation.course=="completed"]),sd(dane$writing.score[dane$test.preparation.course=="completed"]),sd(dane$math.score[dane$test.preparation.course=="none"]),sd(dane$reading.score[dane$test.preparation.course=="none"]),sd(dane$writing.score[dane$test.preparation.course=="none"]))
+table<-data.frame(test,exams,score,sd)
+
+
+```
+
+```{r, fig.align="center"  }
+ggplot(table,aes(x=table$exams, y=table$score, fill = table$test))+geom_bar(colour="black",stat="identity", position=position_dodge())+geom_errorbar(aes(x=table$exams ,ymin=table$score-table$sd, ymax=table$score+table$sd), width=0.4, colour="orange", alpha=0.9, size=1.3, position=position_dodge(.9))+labs(x="exams" , y="results", fill="test preparation course")+scale_fill_brewer(palette="Dark2")+theme_minimal()
+```
+
+####Widzimy, że zaliczenie testu przygotowującego ma bardzo duży wpływ na wynik ostateczny egzaminu. Osoby które zaliczyły test przygotowujący mają średnio o 15 punktów więcej na egzaminie końcowym. 
+***
+
+##**Płeć, pochodzenie studenta itd. ma wpływ na wynik egzaminu, ale czy jest jakiś związek między egzaminami?**
+```{r,message=FALSE, warning=FALSE, fig.align="center"}
+library(gplots)
+wyniki = data.frame(dane$math.score, dane$reading.score, dane$writing.score)
+names(wyniki)=c("math","reading","writing")
+wyniki = as.matrix(wyniki)
+
+heatmap.2(cor(wyniki), main = "Heatmap", trace= "none", margins = c(10,12), cexRow=1, cexCol = 1, Rowv=FALSE,Colv=FALSE, cellnote = round(cor(wyniki), digit=2), notecol = "black")
+
+
+```
+
+####Łatwo zauważyć wysoką korelację pomiędzy egzaminem z czytania i egzaminem z pisania. Skutek tego można zauważyć na wykresie przedstawiającym wyniki z egzaminów z podziałem na płci. Wówczas dziewczynki radziły sobie niemalże tak samo dobrze z czytaniem i pisaniem.
+***
+<div style="text-align: center"><img src="C:/Users/roksi/OneDrive/Pulpit/mis.jpg" alt="Tu podaj tekst alternatywny" width="600" height="700"></div>
